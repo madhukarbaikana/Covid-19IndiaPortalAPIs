@@ -5,7 +5,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 
-
 const app = express();
 app.use(express.json());
 const dbPath = path.join(__dirname, "covid19IndiaPortal.db");
@@ -38,9 +37,9 @@ SELECT *
 FROM user
 WHERE username=?
 `;
-  const dbUser = await db.get(selectUserQuery,[username]);
+  const dbUser = await db.get(selectUserQuery, [username]);
 
-  if (dbUser ) {
+  if (dbUser === undefined) {
     response.status(400);
     response.send("Invalid user");
   } else {
@@ -70,7 +69,7 @@ const authenticationToken = (request, response, next) => {
     response.status(401);
     response.send("Invalid JWT Token");
   } else {
-    jwt.verify(jwtToken,"Secrete_Key", (error, payload) => {
+    jwt.verify(jwtToken, "Secrete_Key", (error, payload) => {
       if (error) {
         response.status(401);
         response.send("Invalid JWT Token");
@@ -108,7 +107,7 @@ app.get("/states/:stateId", authenticationToken, async (request, response) => {
     FROM state
     WHERE state_id= ?
     `;
-  const dbUser = await db.get(selectUserQuery,[stateId]);
+  const dbUser = await db.get(selectUserQuery, [stateId]);
 
   response.send({
     stateId: dbUser.state_id,
@@ -121,21 +120,22 @@ app.get("/states/:stateId", authenticationToken, async (request, response) => {
 app.post("/districts", authenticationToken, async (request, response) => {
   const districtDetails = request.body;
 
-  const {
-    districtName,
-    stateId,
-    cases,
-    cured,
-    active,
-    deaths,
-  } = districtDetails;
+  const { districtName, stateId, cases, cured, active, deaths } =
+    districtDetails;
 
   const postDistrictQuery = `
 INSERT INTO district (district_name,state_id,cases,cured,active,deaths)
 VALUES 
     (?,?,?,?,?,?)
 `;
-  const dbResponse = await db.run(postDistrictQuery,[districtName,stateId,cases,cured,active,deaths]);
+  const dbResponse = await db.run(postDistrictQuery, [
+    districtName,
+    stateId,
+    cases,
+    cured,
+    active,
+    deaths,
+  ]);
   response.send("District Successfully Added");
 });
 
@@ -152,7 +152,7 @@ app.get(
       FROM district
       WHERE district_id= ?
       `;
-    const district = await db.get(getDistrictQuery,[districtId]);
+    const district = await db.get(getDistrictQuery, [districtId]);
     response.send({
       districtId: district.district_id,
       districtName: district.district_name,
@@ -176,7 +176,7 @@ app.delete(
     DELETE FROM district
     WHERE district_id= ?
     `;
-    await db.run(deleteDistrictQuery,[districtId]);
+    await db.run(deleteDistrictQuery, [districtId]);
     response.send("District Removed");
   }
 );
@@ -189,14 +189,8 @@ app.put(
   async (request, response) => {
     const { districtId } = request.params;
     const districtDetails = request.body;
-    const {
-      districtName,
-      stateId,
-      cases,
-      cured,
-      active,
-      deaths,
-    } = districtDetails;
+    const { districtName, stateId, cases, cured, active, deaths } =
+      districtDetails;
     const putDistrictQuery = `
 UPDATE district
 SET
@@ -210,7 +204,15 @@ SET
 WHERE 
     district_id=?
 `;
-    await db.run(putDistrictQuery,[districtName,stateId,cases,cured,active,deaths,districtId]);
+    await db.run(putDistrictQuery, [
+      districtName,
+      stateId,
+      cases,
+      cured,
+      active,
+      deaths,
+      districtId,
+    ]);
     response.send("District Details Updated");
   }
 );
@@ -227,7 +229,7 @@ app.get(
     FROM district
     WHERE state_id=?
     `;
-    const stats = await db.get(getStateQuery,[stateId]);
+    const stats = await db.get(getStateQuery, [stateId]);
     response.send(stats);
   }
 );
